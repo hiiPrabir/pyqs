@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>PYQ Finder</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="pyq2.css">
+</head>
+
+<body>
+    <header>
+        <div class="wrap brand" aria-label="Site header">
+            <div class="logo" aria-hidden="true"></div>
+            <h1>PYQ Finder</h1>
+            <div style="margin-left:auto; display:flex; gap:8px;">
+                <button id="openLoginTop" class="btn">Login</button>
+                <button id="uploadBtnTop" class="btn">Upload</button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <h2>Find Previous Year Questions Fast</h2>
+            <p>Search or filter by institute, branch, year, exam type, and subject.</p>
+        </section>
+
+        <section class="search-panel" aria-label="Search and filters">
+            <div class="search-row">
+                <input id="q" type="search" placeholder="Try: DBMS 2023 CSE IIT Dhanbad" aria-label="Search query">
+                <button id="searchBtn" aria-label="Search">Search</button>
+            </div>
+            <div class="filters">
+                <select id="fInstitute">
+                    <option value="">Institute (Any)</option>
+                    <option>IIT Dhanbad</option>
+                    <option>IIT Kharagpur</option>
+                    <option>NIT Trichy</option>
+                </select>
+                <select id="fBranch">
+                    <option value="">Branch (Any)</option>
+                    <option>CSE</option>
+                    <option>ECE</option>
+                    <option>ME</option>
+                </select>
+                <select id="fYear">
+                    <option value="">Year (Any)</option>
+                    <option>2025</option>
+                    <option>2024</option>
+                    <option>2023</option>
+                    <option>2022</option>
+                </select>
+                <select id="fExam">
+                    <option value="">Exam (Any)</option>
+                    <option>Midsem</option>
+                    <option>Endsem</option>
+                    <option>Makeup</option>
+                </select>
+                <select id="fSubject">
+                    <option value="">Subject (Any)</option>
+                    <option>DBMS</option>
+                    <option>OS</option>
+                    <option>CN</option>
+                    <option>DSA</option>
+                </select>
+            </div>
+        </section>
+
+        <section class="quick" aria-label="Quick links">
+            <div class="chip" data-chip="popular">Popular Subjects</div>
+            <div class="chip" data-chip="recent">Recent Papers</div>
+            <div class="chip" data-chip="downloaded">Most Downloaded</div>
+            <div class="chip" data-chip="dbms">DBMS 2024</div>
+            <div class="chip" data-chip="os">OS 2023</div>
+        </section>
+
+        <section class="results" id="results" aria-live="polite"></section>
+
+        <footer>
+            <p>© <span id="yearNow"></span> PYQ Finder • Built for students.</p>
+        </footer>
+    </main>
+
+    <div class="modal-back" id="modalBack">
+        <div class="modal">
+            <h3 id="loginTitle">Login to continue</h3>
+            <p style="color: var(--muted); margin: 0 0 8px;">Use email or your institute account.</p>
+            <label for="email">Email</label>
+            <input id="email" type="email" placeholder="you@college.ac.in">
+            <label for="password">Password</label>
+            <input id="password" type="password" placeholder="••••••••">
+            <div class="row">
+                <button id="loginBtn" class="btn primary">Login</button>
+                <button id="closeModal" class="btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const DATA = [
+            { id: 1, institute: "IIT Dhanbad", branch: "CSE", year: 2025, exam: "Endsem", subject: "DBMS", file: "dbms_2025_endsem.pdf" },
+            { id: 2, institute: "IIT Dhanbad", branch: "CSE", year: 2024, exam: "Midsem", subject: "OS", file: "os_2024_midsem.pdf" },
+            { id: 3, institute: "IIT Dhanbad", branch: "CSE", year: 2023, exam: "Endsem", subject: "CN", file: "cn_2023_endsem.pdf" },
+            { id: 4, institute: "IIT Dhanbad", branch: "CSE", year: 2022, exam: "Midsem", subject: "DSA", file: "dsa_2022_midsem.pdf" },
+            { id: 5, institute: "IIT Kharagpur", branch: "ECE", year: 2023, exam: "Endsem", subject: "CN", file: "cn_kgp_2023_endsem.pdf" },
+            { id: 6, institute: "NIT Trichy", branch: "ME", year: 2024, exam: "Makeup", subject: "OS", file: "os_nitt_2024_makeup.pdf" }
+        ];
+
+        let isLoggedIn = false;
+
+        const resultsEl = document.getElementById("results");
+        const qEl = document.getElementById("q");
+        const searchBtn = document.getElementById("searchBtn");
+        const chips = document.querySelectorAll(".chip");
+        const modalBack = document.getElementById("modalBack");
+        const openLoginTop = document.getElementById("openLoginTop");
+        const uploadBtnTop = document.getElementById("uploadBtnTop");
+        const loginBtn = document.getElementById("loginBtn");
+        const closeModal = document.getElementById("closeModal");
+        const emailEl = document.getElementById("email");
+        const passwordEl = document.getElementById("password");
+        const yearNow = document.getElementById("yearNow");
+
+        yearNow.textContent = new Date().getFullYear();
+        const openModal = () => modalBack.style.display = "grid";
+        const closeLogin = () => modalBack.style.display = "none";
+
+        function render(list) {
+            if (!list.length) {
+                resultsEl.innerHTML = `<div class="empty">No papers found</div>`;
+                return;
+            }
+            resultsEl.innerHTML = list.map(item => `
+                <article class="card">
+                    <div class="meta">
+                        <span class="subject">${item.subject}</span>
+                        <span class="tag">${item.institute}</span>
+                        <span class="tag">${item.branch}</span>
+                        <span class="tag">${item.exam}</span>
+                        <span class="tag">${item.year}</span>
+                    </div>
+                    <div class="actions">
+                        <button class="btn">View</button>
+                        <button class="btn primary">Download</button>
+                    </div>
+                </article>
+            `).join("");
+        }
+
+        searchBtn.addEventListener("click", () => {
+            render(DATA);
+        });
+
+        openLoginTop.addEventListener("click", openModal);
+        uploadBtnTop.addEventListener("click", () => {
+            if (!isLoggedIn) openModal();
+        });
+        closeModal.addEventListener("click", closeLogin);
+        loginBtn.addEventListener("click", () => {
+            isLoggedIn = true;
+            closeLogin();
+        });
+
+        render(DATA);
+    </script>
+</body>
+
+</html>
